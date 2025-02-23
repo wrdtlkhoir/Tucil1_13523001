@@ -12,11 +12,11 @@ public class Puzzle {
     public int N,M,P;
     public String S;
     public List<char[][]> puzzleShape;
-    private int checkedCases = 0;
+    private int count = 0;
 
-    public int getCheckedCases() {
-        return checkedCases;
-}
+    public int getKasus(){
+        return count;
+    }
 
     /* Konstruktor */
     public Puzzle (int N, int M, int P, String S, List<char[][]> puzzleShape){
@@ -34,74 +34,71 @@ public class Puzzle {
         // Membaca baris pertama (N M P)
         String[] barisPertama = reader.readLine().trim().split("\\s+");
         if (barisPertama.length < 3) {
+            reader.close();
             throw new IOException("Format file salah: Baris pertama harus berisi N M P.");
         }
         int N = Integer.parseInt(barisPertama[0]); // Jumlah baris papan
         int M = Integer.parseInt(barisPertama[1]); // Jumlah kolom papan
         int P = Integer.parseInt(barisPertama[2]); // Jumlah puzzle
+        if (P < 1 || P > 26) {
+            reader.close();
+            throw new IllegalArgumentException("P harus berada di antara 1 dan 26");
+        }
 
         // Membaca baris kedua (S)
         String S = reader.readLine().trim(); 
+        if (!S.equals("DEFAULT")) {
+            reader.close();
+            throw new IllegalArgumentException("S hanya berjenis 'DEFAULT'");
+        }
 
-        //Debugging Print
-        System.out.println("Baca N: " + N + ", M: " + M + ", P: " + P);
-        System.out.println("Baca S: " + S);
         // Membaca P puzzle shapes
-        List<char[][]> puzzleShape = new ArrayList<>();
-        List<String> currentPiece = new ArrayList<>();
-        char lastBlockChar = '\0'; // Menyimpan karakter awal blok sebelumnya
-        
+        List<char[][]> blocks = new ArrayList<>();
         String line;
+        List<String> currentBlock = new ArrayList<>();
+        char currentChar = '\0';
         while ((line = reader.readLine()) != null) {
-            line = line.trim();
-            if (line.isEmpty()) {
-                continue; // Lewati baris kosong
+            if (!line.isEmpty()) {
+                if (currentBlock.isEmpty() || line.charAt(0) == currentChar) {
+                    currentBlock.add(line);
+                    currentChar = line.charAt(0);
+                } else {
+                    blocks.add(convertToCharArray(currentBlock, currentChar));
+                    currentBlock.clear();
+                    currentBlock.add(line);
+                    currentChar = line.charAt(0);
+                }
             }
-
-            char currentChar = line.charAt(0);
-            if (currentChar != lastBlockChar&& !currentPiece.isEmpty()) {
-                // Jika menemukan blok baru, simpan blok lama (jika ada)
-                puzzleShape.add(convertToCharArray(currentPiece));
-                currentPiece.clear();
-            }
-
-            currentPiece.add(line); // Tambahkan baris ke blok yang sedang diproses
-            lastBlockChar = currentChar;
         }
-
-        // Tambahkan blok terakhir setelah selesai membaca file
-        if (!currentPiece.isEmpty()) {
-            puzzleShape.add(convertToCharArray(currentPiece));
+        if (!currentBlock.isEmpty()) {
+            blocks.add(convertToCharArray(currentBlock, currentChar));
         }
-
         reader.close();
-        return new Puzzle(N, M, P, S, puzzleShape);
+        return new Puzzle(N,M,P,S,blocks);
     }
-
-    private static char[][] convertToCharArray(List<String> piece) {
-        int rows = piece.size();
-        int cols = piece.stream().mapToInt(String::length).max().orElse(0);
-        char[][] shape = new char[rows][cols];
-
-        System.out.println("Convert to char array:");
+    public static char[][] convertToCharArray(List<String> block, char blockId) {
+        int rows = block.size();
+        int cols = block.stream().mapToInt(String::length).max().orElse(0);
+        char[][] array = new char[rows][cols];
         for (int i = 0; i < rows; i++) {
-            shape[i] = new char[cols];
-            Arrays.fill(shape[i], ' '); // Isi dengan spasi untuk menghindari null
-            char[] rowChars = piece.get(i).toCharArray();
-            System.arraycopy(rowChars, 0, shape[i], 0, rowChars.length);
+            Arrays.fill(array[i], '.'); 
+            for (int j = 0; j < block.get(i).length(); j++) {
+                if (block.get(i).charAt(j) == blockId) {
+                    array[i][j] = blockId;
+                }
+            }
         }
-        return shape;
+        return array;
     }
-
-    public static void outputFile (String content) throws IOException{
-        Scanner scan = new Scanner(System.in);
-        System.out.printf("Simpan dengan Nama File (sertakan akhiran .txt): ");
-        String fileSimpan = scan.nextLine();
+    /* Fungsi untuk menyimpan solusi dalam file */
+    public static void outputFile (String content, Scanner scanner) throws IOException{
+        System.out.printf("Masukkan nama file penyimpanan solusi (.txt): ");
+        String fileSimpan = scanner.nextLine();
 
         FileWriter writer = new FileWriter(fileSimpan);
         writer.write(content);
         writer.close();
-        scan.close();
+        System.out.println("Solusi berhasil disimpan dalam file: " + fileSimpan);
     }
 
     //ambil blok shape pertama dari list dicoba posisi normal ditaruh di papan, bila tidak bisa dirotasi per 90 derajat, 
@@ -111,44 +108,28 @@ public class Puzzle {
     //ulangi langkah sebelumnya hingga semua blok habis atau papan penuh
     //bila papan penuh maka selesai
     //bila semua blok habis dan papan belum penuh maka tidak ada solusi
-    public boolean bruteforce(Papan board, List<Blok> pieces, Puzzle puzzle, boolean[] visited) {
-        if (board.isFull()) { //jika papan sudah penuh maka solusi ditemukan
-            System.out.println("Solution found:");
-            return true;
+    public boolean solve(Papan board, List<Blok> pieces, int index) {
+        count++;
+        if (index == pieces.size()) {
+            return board.isFull();
         }
-        System.out.println("Bruteforce");
-        for (int i = 0; i < puzzle.P; i++) { // Mencoba semua blok yang ada
-            checkedCases++; // Tambahkan jumlah kasus yang ditinjau
-            if (visited[i]) continue; // Lewati blok yang sudah digunakan
 
-            Blok piece = pieces.get(i);
-            char[][][] bentuk = piece.perubahanBentuk(); // Ambil semua bentuk rotasi dan refleksi blok
-            System.out.println("a");
-            for (char[][] shape : bentuk) { // Coba semua bentuk rotasi/refleksi
-                for (int k = 0; k < puzzle.N; k++) { // Coba semua posisi baris di papan
-                    for (int l = 0; l < puzzle.M; l++) { // Coba semua posisi kolom di papan
-                        if (board.cekPapan(k, l, piece)) {
-                            board.taruhBlok(k, l, piece); // Taruh blok dengan ID
-                            visited[i] = true; // Tandai blok ini sudah digunakan
+        Blok currentPiece = pieces.get(index);
+        List<char[][]> orientations = currentPiece.getShape();
 
-                            if (bruteforce(board, pieces, puzzle, visited)) {
-                                return true;
-                            }
-                            System.out.println("cc");
-                            board.hapusBlok(k, l, piece); // Hapus blok jika tidak valid
-                            visited[i] = false; // Tandai blok bisa digunakan lagi
+        for (char[][] orientation : orientations) {
+            for (int row = 0; row < this.N; row++) {
+                for (int col = 0; col < this.M; col++) {
+                    if (board.cekPapan(row, col, orientation)) {
+                        board.taruhBlok(row, col, orientation, (char) ('A' + index));
+                        if (solve(board, pieces, index + 1)) {
+                            return true;
                         }
+                        board.hapusBlok(row, col, orientation);
                     }
                 }
             }
         }
         return false;
-    }
-    public void solve(Papan board, List<Blok> pieces, Puzzle puzzle) {
-        boolean[] visited = new boolean[puzzle.P]; // Array untuk menandai blok yang sudah digunakan
-        
-        if (!bruteforce(board, pieces, puzzle, visited)) {
-            System.out.println("No solution found.");
-        }
     }
 }
