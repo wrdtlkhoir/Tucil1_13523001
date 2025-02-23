@@ -1,5 +1,4 @@
 import java.util.Scanner;
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,7 +9,17 @@ public class Main {
     public static void main(String[] args) {
         while (true) {
             try {
-                System.out.println("IQ Puzzler Pro Solver");
+                System.out.println("\r\n" + //
+
+                                        "██╗ ██████╗     ██████╗ ██╗   ██╗███████╗███████╗██╗     ███████╗██████╗     ██████╗ ██████╗  ██████╗     ███████╗ ██████╗ ██╗    ██╗   ██╗███████╗██████╗     \r\n" + //
+                                        "██║██╔═══██╗    ██╔══██╗██║   ██║╚══███╔╝╚══███╔╝██║     ██╔════╝██╔══██╗    ██╔══██╗██╔══██╗██╔═══██╗    ██╔════╝██╔═══██╗██║    ██║   ██║██╔════╝██╔══██╗    \r\n" + //
+                                        "██║██║   ██║    ██████╔╝██║   ██║  ███╔╝   ███╔╝ ██║     █████╗  ██████╔╝    ██████╔╝██████╔╝██║   ██║    ███████╗██║   ██║██║    ██║   ██║█████╗  ██████╔╝    \r\n" + //
+                                        "██║██║▄▄ ██║    ██╔═══╝ ██║   ██║ ███╔╝   ███╔╝  ██║     ██╔══╝  ██╔══██╗    ██╔═══╝ ██╔══██╗██║   ██║    ╚════██║██║   ██║██║    ╚██╗ ██╔╝██╔══╝  ██╔══██╗    \r\n" + //
+                                        "██║╚██████╔╝    ██║     ╚██████╔╝███████╗███████╗███████╗███████╗██║  ██║    ██║     ██║  ██║╚██████╔╝    ███████║╚██████╔╝███████╗╚████╔╝ ███████╗██║  ██║    \r\n" + //
+                                        "╚═╝ ╚══▀▀═╝     ╚═╝      ╚═════╝ ╚══════╝╚══════╝╚══════╝╚══════╝╚═╝  ╚═╝    ╚═╝     ╚═╝  ╚═╝ ╚═════╝     ╚══════╝ ╚═════╝ ╚══════╝ ╚═══╝  ╚══════╝╚═╝  ╚═╝    \r\n" + //
+                                        "                                                                                                                                                               \r\n" + //
+                                        "");
+                System.out.println("Welcome to IQ Puzzler Pro Solver!");
                 System.out.println("1. Solve Puzzle");
                 System.out.println("2. Exit");
                 System.out.printf("Enter your choice: ");
@@ -21,40 +30,50 @@ public class Main {
                     solvePuzzle();
                 }
                 else if (pilihan == 2){
-                    System.out.println("Thank you for using IQ Puzzler Pro Solver!");
+                    System.out.println("\r\n" + //
+                                                "                                        __ \r\n" + //
+                                                " _____ _           _      __ __        |  |\r\n" + //
+                                                "|_   _| |_ ___ ___| |_   |  |  |___ _ _|  |\r\n" + //
+                                                "  | | |   | .'|   | '_|  |_   _| . | | |__|\r\n" + //
+                                                "  |_| |_|_|__,|_|_|_,_|    |_| |___|___|__|\r\n" + //
+                                                "                                           \r\n" + //
+                                                "");
                     scanner.close();
                     return;
                 }
             } catch (Exception e) {
-                System.out.println("Error occurred: " + e.getMessage());
-                System.out.println("Please try again.");
+                System.out.println("Terjadi Error: " + e.getMessage());
+                System.out.println("Silahkan dicoba lagi.");
                 scanner.nextLine();
             }
         }
     }
 
     private static void solvePuzzle() throws IOException {
-        System.out.print("Enter the input file name: ");
+        System.out.print("Masukkan nama file input (.txt): ");
         String filename = scanner.nextLine().trim();
-        System.out.println("Membaca file: " + filename);
         Puzzle puzzleInput = Puzzle.inputFile(filename);
-        System.out.println("File berhasil dibaca.");
         Papan board = new Papan(puzzleInput.N, puzzleInput.M, puzzleInput.S);
         List<Blok> pieces = new ArrayList<>();
+
         for (int i = 0; i < puzzleInput.puzzleShape.size(); i++) {
-            pieces.add(new Blok(i, puzzleInput.puzzleShape.get(i)));
+            pieces.add(new Blok(puzzleInput.puzzleShape.get(i)));
         }
-        System.out.println("File berhasil dibaca.");
-        boolean[] visited = new boolean[puzzleInput.P]; // Tambahkan array untuk menandai blok yang digunakan
+        
         long startTime = System.currentTimeMillis(); // Catat waktu mulai
-        if (puzzleInput.bruteforce(board, pieces, puzzleInput, visited)) {
-            System.out.println("Solution found:");
+        if (puzzleInput.solve(board, pieces,0)) { //ada solusi
+            System.out.println("Solusi Ditemukan!");
             board.printPapan(board);
             long endTime = System.currentTimeMillis();
             System.out.println("\nWaktu pencarian: " + (endTime - startTime) + " ms");
-            System.out.println("Banyak kasus yang ditinjau: " + puzzleInput.getCheckedCases());
+            System.out.println("Banyak kasus yang ditinjau: " + puzzleInput.getKasus());
+            System.out.println("Apakah anda ingin menyimpan solusi? (ya/tidak)");
+            String file = scanner.nextLine();
+            if (file.equals("ya")) {
+                Puzzle.outputFile(board.gridToString(), scanner);
+            }
         } else {
-            System.out.println("No solution found.");
+            System.out.println("Tidak ada solusi.");
         }
     }
 }
