@@ -85,16 +85,16 @@ public class Papan {
         return true;
     }
 
-    public boolean cekPapan(int x, int y, Blok piece) { //cek apakah blok bisa diletakkan di papan
-        char[][] shape = piece.getShape();
+    public boolean cekPapan(int x, int y, char[][] shape) { //cek apakah blok bisa diletakkan di papan
         int baris = shape.length;
         int kolom = shape[0].length;
+        if (x + baris > N || y + kolom > M) {
+            return false;
+        }
         for (int i = 0; i < baris; i++) {
             for (int j = 0; j < kolom; j++) {
-                if (shape[i][j] != '.') {
-                    if (x + i >= N || y + j >= M || grid[x + i][y + j] != '.') { //tidak tumpang tindih dan tidak melebihi batas papan
-                        return false;
-                    }
+                if (shape[i][j] != '.'&& grid[x + i][y + j] != '.') {
+                    return false;
                 }
             }
         }
@@ -102,8 +102,7 @@ public class Papan {
        
     }
 
-    public void taruhBlok(int x, int y, Blok piece) { //tempatkan blok pada papan
-        char[][] shape = piece.getShape();
+    public void taruhBlok(int x, int y, char[][] shape, char idBlok) { //tempatkan blok pada papan
         int baris = shape.length;
         int kolom = shape[0].length;
         for (int i = 0; i < baris; i++) {
@@ -115,8 +114,7 @@ public class Papan {
         }
     }
 
-    public void hapusBlok(int x, int y, Blok piece) { //hapus blok dari papan dengan mengubahnya jadi . kembali
-        char[][] shape = piece.getShape();
+    public void hapusBlok(int x, int y, char[][] shape) { //hapus blok dari papan dengan mengubahnya jadi . kembali
         int baris = shape.length;
         int kolom = shape[0].length;
         for (int i = 0; i < baris; i++) {
@@ -126,5 +124,16 @@ public class Papan {
                 }
             }
         }
+    }
+    /* Mengubah grid menjadi string untuk disimpan di file */
+    public String gridToString() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < M; j++) {
+                sb.append(grid[i][j]);
+            }
+            sb.append("\n");
+        }
+        return sb.toString();
     }
 }
